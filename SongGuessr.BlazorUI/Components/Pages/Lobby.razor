@@ -1,0 +1,131 @@
+﻿@page "/lobby/{LobbyId}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using SongGuessr.BlazorUI.Services
+@using SongGuessr.Shared.Lobbys
+@using SongGuessr.Shared.Playlists
+@using SongGuessr.Shared.Tracks
+@inject ILobbysService LobbysService
+@inject NavigationManager NavigationManager
+@inject AuthenticationState AuthenticationState
+@inject IPlaylistsService PlaylistsService
+@inject ITracksService TracksService
+
+<PageTitle>Lobby</PageTitle>
+
+<h2>Lobby: @LobbyName</h2>
+<p>Lobby Code: @LobbyId</p>
+
+<div>
+    <h3>Players in Lobby:</h3>
+    @if (Players == null)
+    {
+        <p>Loading players...</p>
+    }
+    else if (!Players.Any())
+    {
+        <p>No players in the lobby.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var player in Players)
+            {
+                <li>@player @if (player == HostName)
+                    {
+                        <strong>(Host)</strong>
+                    }</li>
+            }
+        </ul>
+    }
+</div>
+
+@if (IsHost)
+{
+    <button class="btn btn-success" @onclick="StartGame">Start Game</button>
+}
+else
+{
+    <p>Waiting for the host to start the game...</p>
+}
+
+<p>Lobby Code: <strong>@LobbyId</strong></p>
+
+@if (RandomTrack == null)
+{
+    <button class="btn btn-danger" @onclick="Testing">Get random track</button>
+}
+else
+{
+    <p>@RandomTrack.Artists.First().Name - @RandomTrack.Name</p>
+}
+
+@code {
+    [Parameter] public string LobbyId { get; set; }
+
+    private string LobbyName { get; set; }
+    private List<string> Players { get; set; } = new();
+    private string HostName { get; set; }
+    private bool IsHost { get; set; }
+    private Track RandomTrack { get; set; }
+
+    private HubConnection hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLobbyInfo();
+
+        hubConnection.On("GameStarted", () =>
+        {
+            NavigationManager.NavigateTo($"/game/{LobbyId}");
+        });
+    }
+
+    private async Task LoadLobbyInfo()
+    {
+        var request = new GetLobbyRequest(LobbyId);
+
+        var result = await LobbysService.GetLobbyAsync(request, default);
+
+        if (result.IsSuccess && result.Value.Lobby != null)
+        {
+            var lobbyInfo = result.Value;
+            LobbyName = lobbyInfo.Lobby.LobbyName;
+            Players = lobbyInfo.Lobby.Players.ToList();
+            HostName = lobbyInfo.Lobby.HostName;
+            IsHost = AuthenticationState.IsHost;
+        }
+        else
+        {
+            Console.WriteLine(result.Error);
+        }
+    }
+
+    private async Task Testing()
+    {
+        var playlistRequest = new GetPlaylistRequest("7IpJVWIe2Ar0kTXWDmTIkH", AuthenticationState.AccessToken);
+
+        var playlist = await PlaylistsService.GetPlaylistAsync(playlistRequest, default);
+
+        var trackRequest = new GetRandomTrackRequest(playlist.Value.Tracks.Items);
+
+        var track = await TracksService.GetRandomTrackAsync(trackRequest, default);
+
+        if (track != null)
+        {
+            RandomTrack = track.Value.Track;
+        }
+    }
+
+    private async Task StartGame()
+    {
+        Console.WriteLine("Game is starting...");
+
+        if (IsHost)
+        {
+            await hubConnection.SendAsync("StartGame", LobbyId);
+        }
+    }
+
+
+}

@@ -1,0 +1,35 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using SongGuessr.Shared.Authentication
+@using SongGuessr.BlazorUI.Services
+@inject IAuthenticationService AuthenticationService
+@inject AuthenticationState AuthenticationState
+@inject NavigationManager NavigationManager
+
+<PageTitle>SongGuessr</PageTitle>
+
+<div class="game-menu">
+    <h1 class="game-title">SongGuessr</h1>
+    <div class="menu-buttons">
+        <button class="menu-button" @onclick="InitializeAuthenticationAsync">Begin</button>
+    </div>
+</div>
+
+@code {
+    private async Task InitializeAuthenticationAsync()
+    {
+        var response = await AuthenticationService.GetSpotifyAccessTokenAsync();
+
+        if (response != null && !string.IsNullOrEmpty(response.Value.AccessToken))
+        {
+            AuthenticationState.AccessToken = response.Value.AccessToken;
+
+            NavigateToUrl("https://localhost:7056/start");
+        }
+    }
+
+    private void NavigateToUrl(string url)
+    {
+        NavigationManager.NavigateTo(url, true);
+    }
+}

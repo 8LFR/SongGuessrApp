@@ -1,0 +1,87 @@
+﻿@page "/game/{LobbyId}"
+@using Microsoft.AspNetCore.SignalR.Client
+@using SongGuessr.Shared.Playlists
+@inject NavigationManager NavigationManager
+
+<h2>Game: @LobbyId</h2>
+
+<div class="game-board">
+    @foreach (var player in Players)
+    {
+        <div class="player-deck">
+            <h3>@player.Name</h3>
+            @foreach (var track in player.Deck)
+            {
+                <div class="track-card">@track.Title - @track.Artist</div>
+            }
+        </div>
+    }
+</div>
+
+@if (IsCurrentPlayer)
+{
+    <div class="current-track">
+        <h3>Current Track</h3>
+        <audio controls src="@CurrentTrack.PreviewUrl"></audio>
+        <button @onclick="PlayPreview">Play 15s Preview</button>
+        <input @bind="GuessedTitle" placeholder="Guess Title" />
+        <input @bind="GuessedArtist" placeholder="Guess Artist" />
+        <button @onclick="SubmitGuess">Submit Guess</button>
+    </div>
+}
+
+
+
+@code {
+    [Parameter]
+    public string LobbyId { get; set; }
+
+    private HubConnection hubConnection;
+    private List<Player> Players { get; set; } = new List<Player>();
+    private bool IsCurrentPlayer { get; set; }
+    private Track CurrentTrack { get; set; }
+    private string GuessedTitle { get; set; }
+    private string GuessedArtist { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/gamehub"))
+            .Build();
+
+        hubConnection.On<List<Player>>("UpdatePlayers", (players) =>
+        {
+            Players = players;
+            StateHasChanged();
+        });
+
+        hubConnection.On<Track>("NewTrack", (track) =>
+        {
+            CurrentTrack = track;
+            IsCurrentPlayer = true;
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+        await hubConnection.SendAsync("JoinGame", LobbyId);
+    }
+
+    private async Task PlayPreview()
+    {
+        // Implement logic to play 15-second preview
+    }
+
+    private async Task SubmitGuess()
+    {
+        await hubConnection.SendAsync("SubmitGuess", LobbyId, GuessedTitle, GuessedArtist);
+        IsCurrentPlayer = false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

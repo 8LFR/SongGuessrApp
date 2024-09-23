@@ -1,0 +1,277 @@
+﻿@page "/start"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using SongGuessr.BlazorUI.Services
+@using SongGuessr.Shared.Lobbys
+@inject ILobbysService LobbysService
+@inject AuthenticationState AuthenticationState
+@inject NavigationManager NavigationManager
+@inject ProtectedLocalStorage ProtectedLocalStorage
+
+<PageTitle>SongGuessr</PageTitle>
+
+<div class="lobby-section">
+    @if (isLoading)
+    {
+        <p>Loading...</p>
+    }
+    else if (string.IsNullOrWhiteSpace(AuthenticationState.PlayerName))
+    {
+        <input class="player-name-input" type="text" @bind="playerName" placeholder="Enter Player name" />
+        <button class="menu-button"@onclick="UpdatePlayerName">Submit Player Name</button>
+    }
+    else
+    {
+        <p>Welcome, @AuthenticationState.PlayerName!</p>
+
+        <button class="menu-button" @onclick="ShowCreateLobbyModal">Create Lobby</button>
+        <button class="menu-button" @onclick="ShowJoinLobbyModal">Join Lobby</button>
+    }
+
+    @if (LobbyCreationResult != null)
+    {
+        <p class="text-success">@LobbyCreationResult</p>
+    }
+    @if (LobbyCreationError != null)
+    {
+        <p class="text-danger">@LobbyCreationError</p>
+    }
+
+    @if (LobbyJoinResult != null)
+    {
+        <p class="text-success">@LobbyJoinResult</p>
+    }
+    @if (LobbyJoinError != null)
+    {
+        <p class="text-danger">@LobbyJoinError</p>
+    }
+</div>
+
+@if (ShowCreateLobby)
+{
+    <div class="modal" tabindex="-1" style="display:block" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Create Lobby</h3>
+                    <button type="button" class="close"
+                            @onclick="CloseCreateLobbyModal">
+                        <span aria-hidden="true">X</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input class="lobby-name-input" type="text" 
+                           placeholder="Enter Lobby name" 
+                           @bind="LobbyName" />
+                    <input type="checkbox" 
+                        @bind="IsPublic" 
+                        id="public-checkbox" />
+                    <label for="public-checkbox">Public</label>
+                    <br />
+                    <button class="btn btn-success"
+                            @onclick="CreateLobby">
+                        Create
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowJoinLobby)
+{
+    <div class="modal" tabindex="-1" style="display:block" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Join Lobby</h3>
+                    <button type="button" class="close" @onclick="CloseJoinLobbyModal">
+                        <span aria-hidden="true">X</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input class="lobby-id-input" type="text"
+                           placeholder="Enter Lobby ID"
+                           @bind="LobbyId" />
+                    <br />
+                    <button class="btn btn-success" @onclick="JoinLobby">
+                        Join
+                    </button>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .menu-button {
+        background-color: #3498db;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin: 20px;
+    }
+
+        .menu-button:hover {
+            background-color: #2980b9;
+        }
+
+    .lobby-section {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .player-name-input {
+        padding: 10px;
+        margin: 10px 0;
+        width: 300px;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+</style>
+
+@code {
+    private string LobbyName { get; set; }
+    private string LobbyId { get; set; }
+    private bool IsPublic { get; set; }
+    private bool ShowCreateLobby { get; set; } = false;
+    private bool ShowJoinLobby { get; set; } = false;
+    private string? LobbyCreationResult {get;set;}
+    private string? LobbyCreationError { get; set; }
+    private string? LobbyJoinResult { get; set; }
+    private string? LobbyJoinError { get; set; }
+    private bool isLoading { get; set; } = true;
+    private string playerName { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var result = await ProtectedLocalStorage.GetAsync<string>("playerName");
+
+            if (result.Success)
+            {
+                AuthenticationState.PlayerName = result.Value;
+            }
+
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task UpdatePlayerName()
+    {
+        if (!string.IsNullOrWhiteSpace(playerName))
+        {
+            await ProtectedLocalStorage.SetAsync("playerName", playerName);
+            AuthenticationState.PlayerName = playerName;
+
+            StateHasChanged();
+        }
+    }
+
+    private void ShowCreateLobbyModal()
+    {
+        ShowCreateLobby = true;
+        StateHasChanged();
+    }
+
+    private void CloseCreateLobbyModal()
+    {
+        ShowCreateLobby = false;
+    }
+
+    private void ShowJoinLobbyModal()
+    {
+        ShowJoinLobby = true;
+        StateHasChanged();
+    }
+
+    private void CloseJoinLobbyModal()
+    {
+        ShowJoinLobby = false;
+    }
+
+    private async void CreateLobby()
+    {
+        LobbyCreationResult = null;
+        LobbyCreationError = null;
+
+        if (string.IsNullOrWhiteSpace(AuthenticationState.PlayerName))
+        {
+            LobbyCreationError = "Player name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(LobbyName))
+        {
+            LobbyCreationError = "Lobby name is required.";
+            return;
+        }
+
+        var request = new CreateLobbyRequest(
+            LobbyName: LobbyName,
+            IsPublic: IsPublic,
+            PlayerName: AuthenticationState.PlayerName
+        );
+
+        var result = await LobbysService.CreateLobbyAsync(request, default);
+
+        if (result.IsSuccess)
+        {
+            AuthenticationState.IsHost = true;
+            LobbyCreationResult = $"Lobby created successfully with ID: {result.Value.LobbyId}";
+            CloseCreateLobbyModal();
+
+            NavigationManager.NavigateTo($"/lobby/{result.Value.LobbyId}");
+        }
+        else
+        {
+            LobbyCreationError = "Failed to create lobby. Please try again.";
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task JoinLobby()
+    {
+        LobbyJoinResult = null;
+        LobbyJoinError = null;
+
+        if (string.IsNullOrWhiteSpace(AuthenticationState.PlayerName))
+        {
+            LobbyJoinError = "Player name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(LobbyId))
+        {
+            LobbyJoinError = "Lobby ID is required.";
+            return;
+        }
+
+        var request = new JoinLobbyRequest(LobbyId, AuthenticationState.PlayerName);
+
+        var result = await LobbysService.JoinLobbyAsync(request, default);
+
+        if (result.IsSuccess)
+        {
+            LobbyJoinResult = $"Successfully joined lobby with ID: {result.Value.LobbyId}";
+            CloseJoinLobbyModal();
+
+            NavigationManager.NavigateTo($"/lobby/{result.Value.LobbyId}");
+        }
+        else
+        {
+            LobbyJoinError = result.Error;
+        }
+
+        StateHasChanged();
+    }
+}
