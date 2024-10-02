@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using SongGuessr.Shared;
 using SongGuessr.Shared.Playlists;
-using SongGuessr.Shared.Tracks;
 using System.Net;
 using System.Text.Json;
 

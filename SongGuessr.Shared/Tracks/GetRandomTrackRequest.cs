@@ -2,4 +2,4 @@
 
 namespace SongGuessr.Shared.Tracks;
 
-public record GetRandomTrackRequest(PlaylistTrack[] PlaylistTracks);
+public record GetRandomTrackRequest(List<Track> PlaylistTracks);

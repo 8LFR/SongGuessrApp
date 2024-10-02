@@ -53,7 +53,7 @@ else
 
 @if (RandomTrack == null)
 {
-    <button class="btn btn-danger" @onclick="Testing">Get random track</button>
+    @* <button class="btn btn-danger" @onclick="Testing">Get random track</button> *@
 }
 else
 {
@@ -91,7 +91,7 @@ else
         {
             var lobbyInfo = result.Value;
             LobbyName = lobbyInfo.Lobby.LobbyName;
-            Players = lobbyInfo.Lobby.Players.ToList();
+            // Players = lobbyInfo.Lobby.Players.ToList();
             HostName = lobbyInfo.Lobby.HostName;
             IsHost = AuthenticationState.IsHost;
         }
@@ -101,21 +101,21 @@ else
         }
     }
 
-    private async Task Testing()
-    {
-        var playlistRequest = new GetPlaylistRequest("7IpJVWIe2Ar0kTXWDmTIkH", AuthenticationState.AccessToken);
+    // private async Task Testing()
+    // {
+    //     var playlistRequest = new GetPlaylistRequest("7IpJVWIe2Ar0kTXWDmTIkH", AuthenticationState.AccessToken);
 
-        var playlist = await PlaylistsService.GetPlaylistAsync(playlistRequest, default);
+    //     var playlist = await PlaylistsService.GetPlaylistAsync(playlistRequest, default);
 
-        var trackRequest = new GetRandomTrackRequest(playlist.Value.Tracks.Items);
+    //     var trackRequest = new GetRandomTrackRequest(playlist.Value.Tracks.Items);
 
-        var track = await TracksService.GetRandomTrackAsync(trackRequest, default);
+    //     var track = await TracksService.GetRandomTrackAsync(trackRequest, default);
 
-        if (track != null)
-        {
-            RandomTrack = track.Value.Track;
-        }
-    }
+    //     if (track != null)
+    //     {
+    //         RandomTrack = track.Value.Track;
+    //     }
+    // }
 
     private async Task StartGame()
     {

@@ -6,14 +6,9 @@ namespace SongGuessr.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class LobbysController : ControllerBase
+public class LobbysController(ILobbysService lobbysService) : ControllerBase
 {
-    private readonly ILobbysService _lobbysService;
-
-    public LobbysController(ILobbysService lobbysService)
-    {
-        _lobbysService = lobbysService;
-    }
+    private readonly ILobbysService _lobbysService = lobbysService;
 
     [HttpPost("create")]
     public async Task<IActionResult> CreateAsync(

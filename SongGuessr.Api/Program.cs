@@ -1,7 +1,9 @@
 using SongGuessr.HttpClientUtilities;
 using SongGuessr.Shared;
 using SongGuessr.Shared.Authentication;
+using SongGuessr.Shared.Game;
 using SongGuessr.Shared.Lobbys;
+using SongGuessr.Shared.Players;
 using SongGuessr.Shared.Playlists;
 using SongGuessr.Shared.Tracks;
 using StackExchange.Redis;
@@ -22,6 +24,8 @@ builder.Services.AddTransient<IAuthenticationService, AuthenticationService>();
 builder.Services.AddTransient<IPlaylistsService, PlaylistsService>();
 builder.Services.AddTransient<ILobbysService, LobbysService>();
 builder.Services.AddTransient<ITracksService, TracksService>();
+builder.Services.AddTransient<IPlayersService, PlayersService>();
+builder.Services.AddTransient<IGameService, GameService>();
 
 var configuration = builder.Configuration;
 

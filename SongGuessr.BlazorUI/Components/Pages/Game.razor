@@ -1,5 +1,6 @@
 ﻿@page "/game/{LobbyId}"
 @using Microsoft.AspNetCore.SignalR.Client
+@using SongGuessr.Shared.Players
 @using SongGuessr.Shared.Playlists
 @inject NavigationManager NavigationManager
 
@@ -10,10 +11,10 @@
     {
         <div class="player-deck">
             <h3>@player.Name</h3>
-            @foreach (var track in player.Deck)
+@*             @foreach (var track in player.Deck)
             {
                 <div class="track-card">@track.Title - @track.Artist</div>
-            }
+            } *@
         </div>
     }
 </div>

@@ -11,9 +11,9 @@ public class TracksService : ITracksService
         }
 
         var random = new Random();
-        var randomIndex = random.Next(request.PlaylistTracks.Length);
-        var selectedPlaylistTrack = request.PlaylistTracks[randomIndex];
+        var randomIndex = random.Next(request.PlaylistTracks.Count);
+        var selectedTrack = request.PlaylistTracks.ElementAt(randomIndex);
 
-        return Result<GetRandomTrackResponse>.Success(new GetRandomTrackResponse { Track = selectedPlaylistTrack.Track });
+        return Result<GetRandomTrackResponse>.Success(new GetRandomTrackResponse { Track = selectedTrack });
     }
 }
